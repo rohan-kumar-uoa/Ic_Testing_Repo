@@ -139,6 +139,8 @@ def solve_ic(foldername, ic_guess = 18.5):
     measured_data['Run Number'] = measured_data['Run Number'].astype(float)
     measured_data['Current (A)'] = measured_data['Current (A)'].astype(float)
     measured_data['Voltage (uV/cm)'] = measured_data['Voltage (uV/cm)'].astype(float)
+    measured_data['Temperature (K)'] = measured_data['Temperature (K)'].astype(float)
+    mean_temps = measured_data.groupby('Run Number')['Temperature (K)'].mean().to_numpy(dtype = float)
 
     t = measured_data['Date'] + ' ' + measured_data['Time']
     run_times = pd.to_datetime(t).dt.tz_localize("Pacific/Auckland")
@@ -177,7 +179,7 @@ def solve_ic(foldername, ic_guess = 18.5):
 
     power_params = np.array(power_params).transpose()
     extended_params = np.array(extended_params).transpose()
-    return AbsTime, RelTime, power_params, extended_params
+    return AbsTime, RelTime, power_params, extended_params, mean_temps
 
 def populate_raw_data(foldername):
     tdms_file = TdmsFile.read(foldername + "\\Experiment_DataFile.tdms")
@@ -318,6 +320,24 @@ def dosage_from_tdms(actions = [], timings = [], fname = "", plot_bool = False):
 
     return df
 
+def temp_ic_interpolate(temp_arr, ic_arr, n = False, kind = 'linear'):
+    """Figure out what temperature changes were needed to see the observed changes in Ic. Temperatures must be passed in Celcius
+    """
+    theva_fname = r"Data Analysis Folder\THEVA Pro-Line 2G HTS 0 T Temperature Dependence.csv"
+    # theva_df = pd.read_csv(theva_fname, header = None, names = ['Temp(K)','a','b','ic'])[['Temp(K)', 'ic']]
+    theva_df = pd.read_csv(theva_fname, header = None)[[0,3]]
+    
+    theva_df.columns = ['Temp(K)', 'ic']
+
+    baseline_ic = interp1d(theva_df['Temp(K)'], theva_df['ic'], assume_sorted = False, kind = kind)(temp_arr[0]+273.15)
+    scaled_ic_arr = ic_arr * (baseline_ic/ic_arr[0])
+    scaled_ic_arr = nom(scaled_ic_arr)
+    corrected_temp = interp1d(theva_df['ic'], theva_df['Temp(K)'], assume_sorted = False, kind = kind)(scaled_ic_arr)
+    if n == True:
+        return corrected_temp - 273.15 - temp_arr[0]
+    else:
+        return corrected_temp - 273.15
+
 class ic_run():
     def __init__(self):
         self.foldername = ""
@@ -329,14 +349,16 @@ class ic_run():
         self.crittimes = []
         self.numrums = 0
         self.splitindex = []
+        self.temps = np.array([])
 
     @classmethod
     def load_from_folder(cls, foldername, ic_guess = 18.5):
         obj = cls()
         obj.foldername = foldername
         obj.id = os.path.split(foldername)[1]
-        AbsTime, RelTime, power_params, extended_params = solve_ic(foldername, ic_guess=ic_guess)
+        AbsTime, RelTime, power_params, extended_params, mean_temps = solve_ic(foldername, ic_guess=ic_guess)
         obj.first_time, obj.times = (AbsTime[0], RelTime)
+        obj.temps = mean_temps
         obj.power = power_fit.populate(power_params)
         obj.extended = extended_fit.populate(extended_params)
 
@@ -429,7 +451,6 @@ class xray_ic_run(ic_run):
         super().__init__()
         self.refillingtimes = []
         
-
     @classmethod
     def load_from_folder(cls, foldername, dosage_rate = 23.6, ic_guess = 18.5):
         obj = super(xray_ic_run,cls).load_from_folder(foldername, ic_guess = ic_guess)
@@ -568,6 +589,26 @@ class xray_ic_run(ic_run):
         plt.ylabel("Ic (A)") 
         plt.tight_layout()
 
+    def temp_ic_interpolate(self):
+        corrected = temp_ic_interpolate(self.temps, self.power.ic)
+        self.corrected_temp = corrected
+
+    def plot_interpolated_temperature(self, plot_type = "extended"):
+        self.temp_ic_interpolate()
+        ic_array = getattr(self, plot_type).ic
+        fig, ax1 = plt.subplots()
+        ax2 = ax1.twinx()
+
+        ax1.errorbar(self.times/3600, nom(ic_array),yerr = err(ic_array),fmt = 'go-',markersize = 2,capsize=3,label = self.id)
+
+        ax2.plot(self.times/3600, self.corrected_temp, 'b', label = 'Inferred Temperature (C)')
+
+        ax1.set(xlabel = 'Time (hours)', ylabel = 'Ic (A)')
+        ax2.set(ylabel = "Inferred Temperature (C)")
+        ax2.legend()
+        ax1.legend()
+        ax2.ticklabel_format(useOffset = False)
+        fig.tight_layout()
 
 def get_uncertain_mean(uarr):
     arr = [x for x in uarr if ~np.isnan(x.n)]
