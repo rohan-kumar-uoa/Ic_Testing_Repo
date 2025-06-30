@@ -1,5 +1,11 @@
 This repository contains Ic testing Data and Data analysis files for Ic Tests done under irradiation at GNS. Tests at GNS were done over 4 periods. The datafiles for these runs are stored in ./Data Analysis Folder/Xray runs
 
+Use 
+```
+pip install requirements.txt
+```
+to install all necessary packages.
+
 Day 1: 4th Feb 2025
 Experiment carried out between: 11:48 - 16:52
 Constant irradiation at maximum power between 11:53 - 16:31
