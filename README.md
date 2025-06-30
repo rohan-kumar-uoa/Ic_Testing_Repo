@@ -18,3 +18,5 @@ Experiment carried out between: 10:32 - 03:50
 Constant irradiation at maximum power between 10:33 - 13:08 , 13:37 - 17:26, 18:00 - 22:30
 
 See oop_publication_generating_code.ipynb for data analysis.
+
+To carry out Ic tests, use 'IC measurment N6972A - Rohan version - 24.06 WHILELOOP.vi'.
