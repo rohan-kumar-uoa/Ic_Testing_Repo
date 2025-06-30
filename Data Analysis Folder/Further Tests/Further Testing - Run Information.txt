@@ -1,0 +1,28 @@
+This file contains information about the data in the 'Further Tests' Folder. 
+The start date and time of the experiment on each day is given, along with the relative times at which the liquid nitrogen was either refilled or mixed. 
+
+Day 1: Thurs ['2025-03-13']
+Time Started: 11:35:00
+Times Filled: ['03:13']
+Times Mixed: ['04:45', '05:27', '05:49']
+
+Day 2: Fri ['2025-03-14']
+Time Started: 10:08:00
+Times Filled: ['04:16']
+Times Mixed: ['04:21', '05:39', '06:57']
+
+Day 3: Mon ['2025-03-17']
+Time Started: 11:00:00
+Times Filled: ['04:20']
+Times Mixed: ['02:04']
+
+Day 4: Tue ['2025-03-18']
+Time Started: 10:03:00
+Times Filled: ['04:28']
+Times Mixed: ['03:57']
+
+Day 5: Wed ['2025-03-19']
+Time Started: 11:44:00
+Times Filled: ['04:51']
+Times Mixed: ['02:12', '04:02']
+

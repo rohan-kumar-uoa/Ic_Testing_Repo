@@ -1,0 +1,12 @@
+# Latex Source Files #
+###################
+*.aux
+*.blg
+*.log
+*.out
+*.synctex.gz
+*.bbl
+
+testing.txt
+mybib.bib
+HTS irradiation bib.bib
